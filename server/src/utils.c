@@ -1,42 +1,67 @@
 #include"utils.h"
 
-t_log* logger;
+t_log * logger;
 
 int iniciar_servidor(void)
 {
-	// Quitar esta línea cuando hayamos terminado de implementar la funcion
-	assert(!"no implementado!");
-
+	int err;
 	int socket_servidor;
 
-	struct addrinfo hints, *servinfo, *p;
+	struct addrinfo hints, *server_info;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	getaddrinfo(NULL, PUERTO, &hints, &servinfo);
+	err = getaddrinfo(NULL, "4444", &hints, &server_info);
+	if (err != 0) 
+	{
+		fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(err));
+		exit(EXIT_FAILURE);
+	}
 
 	// Creamos el socket de escucha del servidor
-
+	socket_servidor= socket (server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
+	if (socket_servidor == -1) 
+	{
+		perror("socket");
+		exit(EXIT_FAILURE);
+	}
+                        
 	// Asociamos el socket a un puerto
-
+	err = setsockopt (socket_servidor, SOL_SOCKET, SO_REUSEPORT, &(int){1}, sizeof(int));
+	if (err == -1) 
+	{
+		perror("setsockopt");
+		exit(EXIT_FAILURE);
+	}
+	
+	err = bind (socket_servidor, server_info->ai_addr, server_info->ai_addrlen);
+	if (err == -1) 
+	{
+		perror("bind");
+		exit(EXIT_FAILURE);
+	}
 	// Escuchamos las conexiones entrantes
-
-	freeaddrinfo(servinfo);
-	log_trace(logger, "Listo para escuchar a mi cliente");
+	err = listen (socket_servidor, SOMAXCONN);
+	if (err == -1) 
+	{
+		perror("listen");
+		exit(EXIT_FAILURE);
+	}
+	
+	freeaddrinfo (server_info);
+	log_trace (logger, "Listo para escuchar a mi cliente");
 
 	return socket_servidor;
 }
 
-int esperar_cliente(int socket_servidor)
+int esperar_cliente (int socket_servidor)
 {
-	// Quitar esta línea cuando hayamos terminado de implementar la funcion
-	assert(!"no implementado!");
-
 	// Aceptamos un nuevo cliente
-	int socket_cliente;
+	int socket_cliente = accept (socket_servidor, NULL, NULL);
+	
 	log_info(logger, "Se conecto un cliente!");
 
 	return socket_cliente;
